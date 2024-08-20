@@ -22,118 +22,171 @@ Conceptos básicos a utilizar:
 Ejemplo de ejecución:
 Al ejecutar el programa, se le pedirá al usuario que ingrese el tipo de cereal y el peso de la carga. El programa verificará los datos y actualizará el stock del silo correspondiente. Si hay algún error o si el silo está lleno, se mostrará un mensaje al usuario. */
 
-const btnIniciarCarga = document.getElementById('inicioCarga');
-
-const siloSoja = {
-  nombre: 'Silo de Soja',
-  capacidadMaxima: 10000,
-  stockActual: 0,
-};
+let iniciar_carga = document.getElementById('inicioCarga');
 
 const siloMaiz = {
-  nombre: 'Silo de Maiz',
-  capacidadMaxima: 10000,
-  stockActual: 0,
+  nombre: 'silo de maíz',
+  capMax: 15000,
+  tn_actuales: 1500,
+  get stockDisponible() {
+    return this.capMax - this.tn_actuales;
+  },
 };
 
-function ingresarCamion() {
-  let continuar;
-  do {
-    let tipoCereal;
-    let pesoCarga;
-    let siloSeleccionado;
+const siloSoja = {
+  nombre: 'silo de soja',
+  capMax: 20000,
+  tn_actuales: 4200,
+  get stockDisponible() {
+    return this.capMax - this.tn_actuales;
+  },
+};
 
-    do {
-      tipoCereal = prompt(
-        'Ingrese el tipo de cereal (soja o maiz):'
-      ).toLowerCase();
-      if (tipoCereal !== 'soja' && tipoCereal !== 'maiz') {
-        alert(
-          'Error: El tipo de cereal ingresado no es válido. Por favor, ingrese "soja" o "maiz".'
-        );
+const validar_carga = (cantidad, silo) => {
+  if (cantidad > silo.capMax) {
+    Swal.fire({
+      title: 'Error',
+      html: `La cantidad de toneladas ingresadas (${cantidad} toneladas) excede la capacidad máxima del ${silo.nombre}.
+      <br>Capacidad máxima: ${silo.capMax} toneladas.
+      <br>Stock actual: ${silo.tn_actuales} toneladas.
+      <br>Espacio disponible: ${silo.stockDisponible} toneladas.`,
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonText: 'Intentar de nuevo',
+      cancelButtonText: 'Finalizar operación',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        ingresarCarga(silo); // Permitir al usuario ingresar nuevamente el peso
+      } else {
+        Swal.fire({
+          title: 'Operación finalizada',
+          text: 'No se realizó ninguna carga.',
+          icon: 'info',
+        });
       }
-    } while (tipoCereal !== 'soja' && tipoCereal !== 'maiz');
-
-    // Seleccionar el silo correspondiente
-    if (tipoCereal === 'soja') {
-      siloSeleccionado = siloSoja;
-    } else if (tipoCereal === 'maiz') {
-      siloSeleccionado = siloMaiz;
-    }
-
-     // Validar el peso de la carga
-     do {
-        pesoCarga = parseFloat(prompt('Ingrese el peso de la carga (en kg):'));
-        if (isNaN(pesoCarga) || pesoCarga <= 0) {
-            alert('Error: El peso ingresado no es válido. Inténtelo de nuevo.');
-        }
-    } while (isNaN(pesoCarga) || pesoCarga <= 0);
-
-    // Verificar si hay suficiente espacio en el silo
-    if (
-      siloSeleccionado.stockActual + pesoCarga <=
-      siloSeleccionado.capacidadMaxima
-    ) {
-      siloSeleccionado.stockActual += pesoCarga;
-      alert(
-        `El camión ha sido ingresado exitosamente.\n${siloSeleccionado.nombre} ahora tiene ${siloSeleccionado.stockActual} kg de cereal.`
-      );
-    } else {
-      alert(
-        `Error: No hay suficiente espacio en el ${siloSeleccionado.nombre} para almacenar esta carga.`
-      );
-    }
-
-    continuar = prompt('¿Desea ingresar otro camión? (si/no)').toLowerCase();
-  } while (continuar === 'si');
-}
-
-function mostrarSilo() {
-  const tipoCereal = prompt(
-    'Ingrese el silo que desea ver (soja o maiz):'
-  ).toLowerCase();
-
-  let siloSeleccionado;
-
-  switch (tipoCereal) {
-    case 'soja':
-      siloSeleccionado = siloSoja;
-      break;
-    case 'maiz':
-      siloSeleccionado = siloMaiz;
-      break;
-    default:
-      alert('Error: El tipo de silo ingresado no es válido.');
-      return;
+    });
+  } else if (cantidad > silo.stockDisponible) {
+    Swal.fire({
+      title: 'Error',
+      text: `La cantidad de toneladas ingresadas (${cantidad} toneladas) es mayor al espacio disponible en el ${silo.nombre}. 
+      \nEl espacio disponible es de: ${silo.stockDisponible} toneladas.`,
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonText: 'Intentar de nuevo',
+      cancelButtonText: 'Finalizar operación',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        ingresarCarga(silo); // Permitir al usuario ingresar nuevamente el peso
+      } else {
+        Swal.fire({
+          title: 'Operación finalizada',
+          text: 'No se realizó ninguna carga.',
+          icon: 'info',
+        });
+      }
+    });
+  } else {
+    finaliza_carga(cantidad, silo);
   }
+};
 
-  alert(
-    `Estado actual del ${siloSeleccionado.nombre}:\nStock Actual: ${siloSeleccionado.stockActual} kg\nCapacidad Máxima: ${siloSeleccionado.capacidadMaxima} kg`
-  );
-}
+const finaliza_carga = (cantidad, silo) => {
+  if (cantidad > silo.stockDisponible) {
+    validar_carga(cantidad, silo);
+  } else {
+    silo.tn_actuales += cantidad;
+    Swal.fire({
+      title: 'Operación realizada con éxito',
+      text: `Se han ingresado ${cantidad} toneladas al ${silo.nombre}.\nStock actual: ${silo.tn_actuales} toneladas.\nEspacio disponible: ${silo.stockDisponible} toneladas.`,
+      icon: 'success',
+    }).then(() => {
+      Swal.fire({
+        title: '¿Quieres realizar otra carga?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí',
+        cancelButtonText: 'No',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          seleccionarGrano(); // Reiniciar el proceso
+        } else {
+          Swal.fire({
+            title: '¡Gracias por utilizar nuestro sistema!',
+            text: 'Esperamos que hayas tenido una excelente experiencia con nuestro simulador de planta de silo.',
+            icon: 'info',
+          });
+        }
+      });
+    });
+  }
+};
 
-function mostrarMenu() {
-  let opcion;
-  do {
-    opcion = parseInt(
-      prompt('Elija una opción:\n1. Ingresar Camion\n2. Mostrar Silo\n3. Salir')
-    );
+function seleccionarGrano() {
+  Swal.fire({
+    title: 'Selecciona el tipo de grano',
+    input: 'select',
+    inputOptions: {
+      1: 'Soja',
+      2: 'Maíz',
+    },
+    inputPlaceholder: 'Selecciona un grano',
+    showCancelButton: true,
+    confirmButtonText: 'Seleccionar',
+    cancelButtonText: 'Cancelar',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const tipoCereal = result.value;
+      let silo_seleccionado;
 
-    switch (opcion) {
-      case 1:
-        ingresarCamion();
-        break;
-      case 2:
-        mostrarSilo();
-        break;
-      case 3:
-        alert('Gracias por utilizar el sistema.');
-        break;
-      default:
-        alert('Error: Opción incorrecta.');
-        break;
+      switch (tipoCereal) {
+        case '1':
+          silo_seleccionado = siloSoja;
+          break;
+        case '2':
+          silo_seleccionado = siloMaiz;
+          break;
+        default:
+          Swal.fire({
+            title: 'Error',
+            text: 'Opción no válida, selecciona nuevamente.',
+            icon: 'error',
+          }).then(() => seleccionarGrano());
+          return;
+      }
+
+      ingresarCarga(silo_seleccionado); // Pasar al proceso de ingresar carga
     }
-  } while (opcion !== 3);
+  });
 }
 
-btnIniciarCarga.addEventListener('click', mostrarMenu);
+function ingresarCarga(silo) {
+  Swal.fire({
+    title: 'Ingresa la cantidad de toneladas a cargar',
+    input: 'number',
+    inputAttributes: {
+      min: 1,
+      step: 1,
+      placeholder: 'Toneladas',
+    },
+    showCancelButton: true,
+    confirmButtonText: 'Ingresar',
+    cancelButtonText: 'Cancelar',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const cantToneladas = parseFloat(result.value);
+
+      if (isNaN(cantToneladas) || cantToneladas <= 0) {
+        Swal.fire({
+          title: 'Atención',
+          text: 'Debes ingresar un número positivo válido ⚠️',
+          icon: 'warning',
+          confirmButtonText: 'Intentar de nuevo',
+        }).then(() => ingresarCarga(silo)); // Reintentar la carga
+      } else {
+        finaliza_carga(cantToneladas, silo); // Finalizar la carga si es válida
+      }
+    }
+  });
+}
+
+iniciar_carga.addEventListener('click', seleccionarGrano);
