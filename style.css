@@ -1,0 +1,16 @@
+body {
+  background-image: url('./img/silo.webp');
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+#inicioCarga {
+  background-color: blueviolet;
+  color: #fff;
+  margin-top: 150px;
+  border: none;
+}
+
+#inicioCarga:hover {
+  background-color: #ca09c0;
+}
